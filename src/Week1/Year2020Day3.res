@@ -5,14 +5,15 @@ let rowLength = arr->Belt.List.head->Belt.Option.mapWithDefault(0,Js.String2.len
 
 // 1. specific version 
 
-let a = arr
-  ->Belt.List.keep(a => a !== "")
-  ->Belt.List.map(str => str->Js.String2.split(""))
-  ->Belt.List.mapWithIndex((idx, arr) => {
-      arr[(idx * 3) - (idx * 3 / rowLength) * rowLength]
-  })
-  ->Belt.List.keep(x => x === "#")
-  ->Belt.List.length
+let specific = () => 
+    arr // call by name ?
+      ->Belt.List.keep(a => a !== "")
+      ->Belt.List.map(str => str->Js.String2.split(""))
+      ->Belt.List.mapWithIndex((idx, arr) => {
+          arr[(idx * 3) - (idx * 3 / rowLength) * rowLength]
+      })
+      ->Belt.List.keep(x => x === "#")
+      ->Belt.List.length
 
 // 2. general version
 
