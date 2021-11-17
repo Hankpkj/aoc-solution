@@ -36,10 +36,6 @@ let findTrees = (arr: list<string>, dir: direction) => {
   }
 }
 
-let temp : direction = {
-  row: 1, col: 3
-}
-
 let directions : list<direction> = list{ // given by Aoc
   {row: 1, col: 1},
   {row: 1, col: 3},
@@ -48,7 +44,8 @@ let directions : list<direction> = list{ // given by Aoc
   {row: 2, col: 1},
 }
 
-directions -> Belt.List.map((dir) => arr -> findTrees(dir))
+let parser = findTrees(arr)
+directions -> Belt.List.map(parser)
            -> Belt.List.reduce(1, (acc, cur) => acc * cur)
            -> Js.log
 

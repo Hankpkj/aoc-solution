@@ -9,12 +9,11 @@ type range = {
     end: int
 }
 
-let findRange : (range, bool) => range = (r: range, signLeft: bool) => {
+let findRange = (r, signLeft) => {
     let {start, mid, end} = r
-    switch signLeft {
-    | true => {start: start, mid: ((start + mid ) / 2), end: mid}
-    | false => {start: mid+1, mid: (((mid + 1)+ end ) / 2), end: end}
-    }
+    signLeft
+        ? {start: start, mid: ((start + mid ) / 2), end: mid}
+        : {start: mid+1, mid: (((mid + 1)+ end ) / 2), end: end}
 }
 
 let initRowRange : range = {
@@ -25,18 +24,22 @@ let initColRange : range = {
     start: 0, mid: 3, end: 7
 }
 
+// FBFFBFFLLR
+// 1011011110 TODO: try binary shift 
+
+let findMid = (r, ir, c) => 
+     Belt.List.reduce(r, ir, (acc, cur) => findRange(acc, cur === c)).mid
+
 let ids = li -> Belt.List.map((str) => {
     let splitted = str -> Js.String2.split("")
         -> Belt.List.fromArray
         -> Belt.List.splitAt(7)
-    switch splitted {
-    | None => 0
-    | Some(fb, lr) => {
-        let row = Belt.List.reduce(fb, initRowRange, (acc, cur) => findRange(acc, cur === "F")).mid
-        let col = Belt.List.reduce(lr, initColRange, (acc, cur) => findRange(acc, cur === "L")).mid
+    
+    splitted -> Belt.Option.mapWithDefault(0, ((fb, lr)) => {
+        let row = findMid(fb, initRowRange, "F")
+        let col = findMid(lr, initColRange, "L")
         row * 8 + col
-        }
-    }
+    })
 })
  -> Belt.List.toArray
  
@@ -45,16 +48,21 @@ let max = ids -> Js.Math.maxMany_int
 // example 1 answer 
 max -> Js.log
 
-let sorted = Js.Array.sortInPlaceWith((n1, n2) => n1 - n2, ids) -> Belt.List.fromArray
+let sorted = ids -> Belt.SortArray.stableSortBy((n1, n2) => n1 - n2) -> Belt.List.fromArray
 
-let head = sorted -> Belt.List.headExn
+let slidingWindow = switch Belt.List.tail(sorted) {
+| Some(tails) => Belt.List.zip(sorted, tails)
+| None => list{}
+}
 
-let mySeat = sorted -> Belt.List.reduce(head, (acc, cur) => 
-    if acc + 1 === cur {cur} else {acc}
-) + 1
+let keeping = slidingWindow -> Belt.List.keep(((a, b)) => b - a !== 1) -> Belt.List.map(((a, b)) => (a + b) / 2) -> Belt.List.head
 
-// example 2 answer 
-mySeat -> Js.log
+// example 2 answer                         
+switch keeping {
+| Some(value) => Js.log(value)
+| None => Js.log("Not Found")
+}
+                            
 
 
 
