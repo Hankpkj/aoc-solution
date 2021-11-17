@@ -1,12 +1,9 @@
 let input = Node.Fs.readFileAsUtf8Sync("input/Week1/Year2020Day3.sample.txt")
 
-let fn = (a) => (b) => a + b
-let fn2 = fn(3)
-
-input->Js.log
-
 let arr = input->Js.String2.split("\n")->Belt.List.fromArray
-let rowLength = arr->Belt.List.head->Belt.Option.mapWithDefault(0, Js.String2.length)
+let rowLength = arr->Belt.List.head->Belt.Option.mapWithDefault(0,Js.String2.length)
+
+// 1. specific version 
 
 let a = arr
   ->Belt.List.keep(a => a !== "")
@@ -17,17 +14,41 @@ let a = arr
   ->Belt.List.keep(x => x === "#")
   ->Belt.List.length
 
-a->Js.log
+// 2. general version
 
-// input->Js.String2.split("\n")
+type direction = {row : int, col : int}
 
+let findTrees = (arr: list<string>, dir: direction) => {
+  let {row, col} = dir
+  let rowLength = arr -> Belt.List.head -> Belt.Option.map(Js.String2.length)
+  // let rowLength = arr -> Belt.List.head -> Belt.Option.mapWithDefault(0, Js.String2.length)
 
-/*
-let arr = input.split("\n");
-let rowLength = arr[0].length;
+  switch rowLength { // Nullable
+  | None => 0
+  | Some(length) => 
+      arr -> Belt.List.keepWithIndex((_, idx) => mod(idx, row) === 0) 
+          -> Belt.List.keep(a => a !== "")
+          -> Belt.List.map(str => str -> Js.String2.split("")) 
+          -> Belt.List.mapWithIndex((idx, arr) => arr[mod(idx * col, length)])
+          -> Belt.List.keep(x => x === "#")
+          -> Belt.List.length
+  }
+}
 
-let a = arr.filter(a => !!a)
-           .map((str, idx) => str[idx * 3 - parseInt(idx * 3 / rowLength) * rowLength])
-           .filter((x) => x === '#').length;
-*/        
+let temp : direction = {
+  row: 1, col: 3
+}
+
+let directions : list<direction> = list{ // given by Aoc
+  {row: 1, col: 1},
+  {row: 1, col: 3},
+  {row: 1, col: 5},
+  {row: 1, col: 7},
+  {row: 2, col: 1},
+}
+
+directions -> Belt.List.map((dir) => arr -> findTrees(dir))
+           -> Belt.List.reduce(1, (acc, cur) => acc * cur)
+           -> Js.log
+
 
