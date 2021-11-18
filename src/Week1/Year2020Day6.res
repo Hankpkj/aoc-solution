@@ -6,7 +6,7 @@ let sum = (a, b) => a + b
 
 // --- Get initial set_string --- //
 let splitBy = (s) => s -> Js.String2.split
-let getSetString = (s) => s -> Js.String2.split("") -> Belt_SetString.fromArray
+let getSetString = (s) => s -> splitBy("") -> Belt_SetString.fromArray
 
 let allAlpha = getSetString("abcdefghijklmnopqrstuvwxyz")
 let emptyAlpha = getSetString("")
