@@ -17,14 +17,26 @@ let reduceSkeleton = (arr, init, f) => Belt.Array.reduce(arr, init, f) -> Belt_S
 let getUnion = (arr) => reduceSkeleton(arr, emptyAlpha, Belt_SetString.union)
 let getIntersect = (arr) => reduceSkeleton(arr, allAlpha, Belt_SetString.intersect)
 
+
+
+/*
+adekjfklj
+zlkxjlkjsdklfj
+woieuroiweu
+
+sdlkhrhjkahdsf
+jksherjkh
+*/
+let parseLine = str => str-> Js.String2.split("") -> Belt.Set.String.fromArray
+let parsePhrase = str => str
+                ->Js.String2.split("\n") 
+                -> Belt.Array.map(parseLine)
+
 // --- Main Part --- //
-let l = input -> splitBy("\n" ++ "\n") 
-              -> Belt.Array.map(str => str -> Js.String2.split("\n") 
-                                           -> Belt.Array.map(str => str -> Js.String2.split("") 
-                                                                        -> Belt.Set.String.fromArray
-                                                            )
-                                ) 
-              -> Belt.List.fromArray 
+let l = input
+    ->splitBy("\n" ++ "\n") 
+    ->Belt.Array.map(parsePhrase) 
+    ->Belt.List.fromArray 
 
 // --- Question 1 : Union --- //
 let union = l -> Belt.List.map(getUnion) -> Belt.List.reduce(0, sum)

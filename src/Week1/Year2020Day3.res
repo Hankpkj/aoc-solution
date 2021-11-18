@@ -50,3 +50,10 @@ directions -> Belt.List.map(parser)
            -> Js.log
 
 
+/*
+parser :: direction => int
+map :: List<'a> => ('a => 'b) => List<'b>
+map :: (direction => int) => (T<direction> => T<int>)
+map :: (direction => int) => (T<direction> => T<int>)
+*/
+

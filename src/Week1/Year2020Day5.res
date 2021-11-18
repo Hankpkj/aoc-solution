@@ -27,8 +27,8 @@ let initColRange : range = {
 // FBFFBFFLLR
 // 1011011110 TODO: try binary shift 
 
-let findMid = (r, ir, c) => 
-     Belt.List.reduce(r, ir, (acc, cur) => findRange(acc, cur === c)).mid
+let findMid = (r, ir, c) => Belt.List.reduce(r, ir, (acc, cur) 
+                         => findRange(acc, cur === c)).mid
 
 let ids = li -> Belt.List.map((str) => {
     let splitted = str -> Js.String2.split("")
@@ -48,14 +48,17 @@ let max = ids -> Js.Math.maxMany_int
 // example 1 answer 
 max -> Js.log
 
-let sorted = ids -> Belt.SortArray.stableSortBy((n1, n2) => n1 - n2) -> Belt.List.fromArray
+let sorted = ids -> Belt.SortArray.stableSortBy((a, z) => a - z) 
+                 -> Belt.List.fromArray
 
-let slidingWindow = switch Belt.List.tail(sorted) {
-| Some(tails) => Belt.List.zip(sorted, tails)
-| None => list{}
-}
+let slidingWindow = sorted->Belt.List.tail->Belt.Option.mapWithDefault(
+    list{},
+    (tails) => Belt.List.zip(sorted, tails)
+)
 
-let keeping = slidingWindow -> Belt.List.keep(((a, b)) => b - a !== 1) -> Belt.List.map(((a, b)) => (a + b) / 2) -> Belt.List.head
+let keeping = slidingWindow -> Belt.List.keep(((a, b)) => b - a !== 1) 
+                            -> Belt.List.map(((a, b)) => (a + b) / 2) 
+                            -> Belt.List.head
 
 // example 2 answer                         
 switch keeping {
