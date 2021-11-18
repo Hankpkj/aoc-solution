@@ -8,8 +8,8 @@ let list = input -> Js.String2.split("\n")
 
 list -> Belt.List.forEach((str) => { // TODO : change forEach into map 
     let [parent, splitted] = str -> Js.String2.split("contain")
-    let list{...child} = splitted -> Js.String2.split(",") -> Belt.List.fromArray
-    
+    let list{...child} = splitted -> Js.String2.split(", ") -> Belt.List.fromArray -> Js.log
+    // child -> Belt.List.map(())
 
 })
 
