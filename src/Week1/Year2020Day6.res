@@ -18,15 +18,6 @@ let getUnion = (arr) => reduceSkeleton(arr, emptyAlpha, Belt_SetString.union)
 let getIntersect = (arr) => reduceSkeleton(arr, allAlpha, Belt_SetString.intersect)
 
 
-
-/*
-adekjfklj
-zlkxjlkjsdklfj
-woieuroiweu
-
-sdlkhrhjkahdsf
-jksherjkh
-*/
 let parseLine = str => str-> Js.String2.split("") -> Belt.Set.String.fromArray
 let parsePhrase = str => str
                 ->Js.String2.split("\n") 
