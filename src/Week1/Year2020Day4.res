@@ -56,8 +56,6 @@ let parseToMap = (s) => s
 ->Belt.Array.keepMap(id)
 ->Belt.Map.String.fromArray
 
-// TODO: 4문자인지 체크해보기
-
 let optionalNumberTest = (t, max, min) => {
     switch t {
     | Some(v) => (v <= max) && (v >= min)
@@ -71,7 +69,7 @@ let yearTest = m => numberTestPair
 ->Belt.List.reduce(true, (acc, (key, (max, min))) => {
     let get = m ->Belt.Map.String.get(key)
     let result = switch get {
-    | Some(v) => Js.Re.test_(%re("/^[1-9][0-9]{3}$/"), v) && v -> Belt.Int.fromString -> optionalNumberTest(max, min)
+    | Some(v) => Js.Re.test_(%re("/^[1-9]{1}[0-9]{3}$/"), v) && v -> Belt.Int.fromString -> optionalNumberTest(max, min)
     | _ => false
     }
     result && acc
@@ -97,8 +95,8 @@ regexTestPair
 
 
 let hgtRegexTest = v => 
-    if Js.Re.test_(%re("/^[0-9]{2}[in]{2}$/"), v) {v -> Belt.Int.fromString -> optionalNumberTest(76, 59) } else {
-        if Js.Re.test_(%re("/^[0-9]{3}[cm]{2}$/"), v) {v -> Belt.Int.fromString -> optionalNumberTest(193, 150) } else { false }
+    if Js.Re.test_(%re("/^[0-9]{2}(?:in)$/"), v) {v -> Belt.Int.fromString -> optionalNumberTest(76, 59) } else {
+        if Js.Re.test_(%re("/^[0-9]{3}(?:cm)$/"), v) {v -> Belt.Int.fromString -> optionalNumberTest(193, 150) } else { false }
     }
 
 let hgtTEst = (m) => {
@@ -117,10 +115,3 @@ input
 ->Belt.Array.keep(regexTest)
 ->Belt.Array.length
 ->Js.log
-
-// let s0 = Belt.Map.String.fromArray([["4", 4], ["1", 1], ["2", 2], ["3", 3]])
-
-
-
-
-
