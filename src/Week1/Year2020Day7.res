@@ -6,5 +6,6 @@ let list = input -> Js.String2.split("\n")
 // given Q : How many bag colors can eventually contain at least one shiny gold bag?
 // given input : list{ "faded cyan bags contain 4 faded coral bags, 3 faded yellow bags." , ... }
 
+// parsing -> Map<Map<string, number>> : like tree -> get keyword 'some bag' -> make Array<number> -> reduce 
 
 
