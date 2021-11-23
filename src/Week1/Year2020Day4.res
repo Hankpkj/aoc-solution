@@ -28,90 +28,116 @@ input
 
 // ---- example 2 ---- //
 
+type passport = {
+    byr: int,
+    iyr: int,
+    eyr: int,
+    hgt: string,
+    hcl: string,
+    ecl: string,
+    pid: string,
+    cid: option<string> 
+}
+
 let toSingleLine = (s) => s ->Js.String2.replaceByRe(%re("/[\s]+/g"), " ")
 
-let id = s => s
+let intCheck = (target, min, max) => 
+    switch target {
+    | Some(x_) => min <= x_ && x_ <= max ? Some(x_) : None
+    | _ => None
+    }
 
-type twoElementTuple = (string, string)
+let extractIntAndCheck = (arr, min, max) => 
+    switch arr {
+    | [_, value] => value -> Belt.Int.fromString -> intCheck(min, max)
+    | _ => None
+    }
 
-let toTuple = s => switch s {
-| [a_, b_] => Some(a_, b_)
-| _ => None
-}
+let extractStr = (arr) => 
+    switch arr {
+    | [_, value] => Some(value)
+    | _ => None
+    }
 
-let j = (p, s, f) => {
-    let g = p -> Belt.Map.String.get(s)
-    switch g {
-    | Some(v) => v -> f
-    | _ => false
+
+let byrRe = %re("/byr:(.*?){4}(?:\s|$)/")
+let iyrRe = %re("/iyr:(.*?){4}(?:\s|$)/")
+let eyrRe = %re("/eyr:(.*?){4}(?:\s|$)/")
+let hgtRe = %re("/hgt:([0-9]{2,3})(in|cm)(?:\s|$)/")
+let hclRe = %re("/hcl:(#[a-f0-9]{6})(?:\s|$)/")
+let eclRe = %re("/ecl:(amb|blu|brn|gry|grn|hzl|oth)(?:\s|$)/")
+let pidRe = %re("/pid:([0-9]{9})/")
+let cidRe = %re("/cid:(.*?)(?:\s|$)/")
+
+let parseYear = (s, re, minY, maxY) => {
+    let matched = s -> Js.String2.match_(re)
+    switch matched {
+    | Some(arr) => arr -> extractIntAndCheck(minY, maxY)
+    | _ => None
     }
 }
 
-let parseToMap = (s) => s
-->toSingleLine 
-->Js.String2.splitByRe(%re("/[\s]+/g"))
-->Belt.Array.keepMap(id)
-->Belt.Array.map(s => s -> Js.String2.split(":"))
-->Belt.Array.map(toTuple)
-->Belt.Array.keepMap(id)
-->Belt.Map.String.fromArray
+let checkHgt = (h, s) => {
+    let min = s === "cm" ? 150 : 59
+    let max = s === "cm" ? 193 : 76
+    let checked = h -> Belt.Int.fromString -> intCheck(min, max)
+    switch checked {
+        | Some(_) => Some(h ++ s)
+        | _ => None
+        }
+}
 
-let optionalNumberTest = (t, max, min) => {
-    switch t {
-    | Some(v) => (v <= max) && (v >= min)
-    | _ => false
+let extractHgt = (arr) => 
+    switch arr {
+    | [_, height, sign] => checkHgt(height, sign)
+    | _ => None
+    }
+
+let parseStr = (s, re) => {
+    let matched = s -> Js.String2.match_(re)
+    switch matched {
+    | Some(arr) => arr -> extractStr
+    | _ => None
     }
 }
 
-let numberTestPair = list{("byr", (2002, 1920)), ("iyr", (2020, 2010)), ("eyr", (2030, 2020))}
-
-let yearTest = m => numberTestPair 
-->Belt.List.reduce(true, (acc, (key, (max, min))) => {
-    let get = m ->Belt.Map.String.get(key)
-    let result = switch get {
-    | Some(v) => Js.Re.test_(%re("/^[1-9]{1}[0-9]{3}$/"), v) && v -> Belt.Int.fromString -> optionalNumberTest(max, min)
-    | _ => false
-    }
-    result && acc
-})
-
-
-let regexTestPair = list{
-    ("hcl", %re("/^#[a-f0-9]{6}$/")), 
-    ("ecl", %re("/^(?:amb|blu|brn|gry|grn|hzl|oth)$/")), 
-    ("pid", %re("/^[0-9]{9}/"))
-}
-
-let regexTest = m => 
-regexTestPair 
-->Belt.List.reduce(true, (acc, (key, re)) => {
-    let get = m ->Belt.Map.String.get(key)
-    let result = switch get {
-    | Some(v) => Js.Re.test_(re, v)
-    | _ => false
-    }
-    result && acc
-})
-
-
-let hgtRegexTest = v => 
-    if Js.Re.test_(%re("/^[0-9]{2}(?:in)$/"), v) {v -> Belt.Int.fromString -> optionalNumberTest(76, 59) } else {
-        if Js.Re.test_(%re("/^[0-9]{3}(?:cm)$/"), v) {v -> Belt.Int.fromString -> optionalNumberTest(193, 150) } else { false }
-    }
-
-let hgtTEst = (m) => {
-    let get = m ->Belt.Map.String.get("hgt")
-    switch get {
-    | Some(v) => hgtRegexTest(v)
-    | _ => false
+let parseHgt = (s) => {
+    let matched = s -> Js.String2.match_(hgtRe)
+    switch matched {
+    | Some(arr) => arr -> extractHgt
+    | _ => None
     }
 }
+
 
 input 
-->Js.String2.split("\n\n") 
-->Belt.Array.map(parseToMap)
-->Belt.Array.keep(yearTest)
-->Belt.Array.keep(hgtTEst)
-->Belt.Array.keep(regexTest)
-->Belt.Array.length
-->Js.log
+->Js.String2.split("\n\n")
+->Belt.Array.map(toSingleLine)
+->Belt.Array.keepMap(str => {    
+    str ->parseYear(byrRe, 1920, 2002) -> Belt.Option.flatMap(byr => 
+        str ->parseYear(iyrRe, 2010, 2020) -> Belt.Option.flatMap(iyr => 
+            str ->parseYear(eyrRe, 2020, 2030) -> Belt.Option.flatMap(eyr => 
+                str ->parseHgt -> Belt.Option.flatMap(hgt => 
+                    str ->parseStr(hclRe)-> Belt.Option.flatMap(hcl => 
+                        str ->parseStr(eclRe)-> Belt.Option.flatMap(ecl => 
+                            str ->parseStr(pidRe)-> Belt.Option.map(pid => 
+                                {
+                                    byr: byr,
+                                    iyr: iyr,
+                                    eyr: eyr,
+                                    hgt: hgt,
+                                    hcl: hcl,
+                                    ecl: ecl,
+                                    pid: pid,
+                                    cid: str -> parseStr(cidRe)
+                                }
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+})
+// -> Belt.Array.length
+-> Js.log

@@ -10,10 +10,10 @@ let list = input -> Js.String2.split("\n")
 
 let id = t => t
 
-module StringCmp = Belt.Id.MakeComparable({
-  type t = string
-  let cmp = (a, b) => Pervasives.compare(a, b)
-})
+// module StringCmp = Belt.Id.MakeComparable({
+//   type t = string
+//   let cmp = (a, b) => Pervasives.compare(a, b)
+// })
 
 // let m = Belt.Map.make(~id=module(StringCmp))
 
@@ -44,20 +44,46 @@ let parseToMap = (s) => {
     }   
 }
 
-type t = 
-| MoreChild(string) // TODO : change Map<string, Map<string, int>>
-| NoMoreChild(int) 
-| None
+// "faded cyan bags contain 4 faded coral bags, 3 faded yellow bags."
 
+// type t1 = MoreChild(Map<string, int>) | NoMoreChild(Int)
+// type t = Map< string, t1 >
+// 'A'  
+// Map<string, Map<string, int>> | Map< string, int>
 
-let findChild = (m, k) => {
-    // let children = Belt.Map.String.get(k)
-    // switch children {
-    // | MoreChild(a) => findChild(a)
-    // | None => 1
-    // }
-    ()
-}
+// type t2 = T2_1(Map<string, Map<string, int>>) | T2_2(Map< string, int>)
+
+// type t1 = MoreChild(Map<string, int>) | NoMoreChild(Int)
+// type t = Map< string, t1 >
+
+// key : string 
+// 
+// type t = Map<string, Map<string, int>>)
+// get :: Map<string, Map<string, int>> -> Map<string, int>
+// get2 :: Map<string, int> -> int
+// t->get('A')->get('B')
+
+// get :: string -> t1
+
+type a = Belt_MapString
+
+// type t = 
+// | MoreChild(Belt.Map.t<string, int>) // TODO : change Map<string, Map<string, int>>
+// | NoMoreChild(int) 
+// | NoChild
+
+// type t1 = Belt.Map.t<string, t>
+
+// Map<string, Map<string, int>> | Map<string, int>
+// same level : + , diffent level : *
+// let findChild = (m: , k) => {
+//     let children = Belt.Map.String.get(k)
+//     switch children {
+//     | MoreChild(Map<string, int>) => 
+//     | NoMoreChild(int) =>   
+//     | NoChild => 
+//     }
+// }
 
 // list 
 // ->Belt.List.map(arr => )
