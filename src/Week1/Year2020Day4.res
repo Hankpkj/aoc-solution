@@ -165,7 +165,6 @@ let parse = s =>
     | _ => None
     }
 
-
 input
 ->Js.String2.split("\n\n")
 ->Belt.Array.map(toSingleLine)
