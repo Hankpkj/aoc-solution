@@ -109,7 +109,7 @@ let parseHgt = (s) => {
     }
 }
 
-
+// process 1
 input 
 ->Js.String2.split("\n\n")
 ->Belt.Array.map(toSingleLine)
@@ -139,5 +139,37 @@ input
         )
     )
 })
-// -> Belt.Array.length
+-> Belt.Array.length
 -> Js.log
+
+// process 2
+
+let parseFnList = t => (
+    t -> parseYear(byrRe, 1920, 2002), 
+    t -> parseYear(iyrRe, 2010, 2020),
+    t -> parseYear(eyrRe, 2020, 2030),
+    t -> parseHgt,
+    t -> parseStr(hclRe),
+    t -> parseStr(eclRe),
+    t -> parseStr(pidRe),
+    t -> parseStr(cidRe)
+)
+
+let make = (byr, iyr, eyr, hgt, hcl, ecl, pid, cid) => Some({
+    byr: byr, iyr: iyr, eyr: eyr, hgt: hgt, hcl: hcl, ecl: ecl, pid: pid, cid: cid
+})
+
+let parse = s => 
+    switch parseFnList(s) {
+    | (Some(byr), Some(iyr), Some(eyr), Some(hgt), Some(hcl), Some(ecl), Some(pid), cid) => make(byr, iyr, eyr, hgt, hcl, ecl, pid, cid)
+    | _ => None
+    }
+
+
+input
+->Js.String2.split("\n\n")
+->Belt.Array.map(toSingleLine)
+->Belt.Array.keepMap(parse)
+->Belt.Array.length 
+->Js.log
+
