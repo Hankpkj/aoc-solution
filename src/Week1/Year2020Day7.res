@@ -1,12 +1,7 @@
 let input = Node.Fs.readFileAsUtf8Sync("input/Week1/Year2020Day7.sample.txt")
 
 let arr = input->Js.String2.split("\n")
-
-let id = t => t
-
 let containRe = %re("/(.*?)\scontain\s(.*?)(?:$)/")
-let divideRe = %re("/,\s/")
-// arr -> Belt.Array.map(tt => tt->Js.String2.replaceByRe(%re("/\s(bags|bag)[\.]*/"), ""))
 
 let makeValueMap = arr => {
   switch arr {
@@ -56,18 +51,11 @@ let maps = arr->Belt.Array.keepMap(s => {
 
 let getKeyFromMap = m => m->Belt.Map.String.keysToArray->Belt.Array.getExn(0)
 
-let getKeyValueFromMap = m => {
-  let toArr = m->Belt.Map.String.toArray
-  switch toArr {
-  | [(a_, b_)] => Some(a_, b_)
-  | _ => None
-  }
-}
-
 let totalMap = Belt.Map.String.mergeMany(Belt.Map.String.empty, maps)
 
 // Q1
 let totalArr = totalMap->Belt.Map.String.toArray
+
 let rec getParents = s => {
   let parrents =
     totalArr->Belt.Array.keepMap(((key_, maps)) =>
@@ -85,15 +73,25 @@ let rec getParents = s => {
 getParents("shiny gold")->Belt.Set.String.size->Js.log
 
 // Q2
+
+let getKeyValueFromMap = m => {
+  let toArr = m->Belt.Map.String.toArray
+  switch toArr {
+  | [(a_, b_)] => Some(a_, b_)
+  | _ => None
+  }
+}
+
 let rec getChildWithParent = key => {
   let children = totalMap->Belt.Map.String.get(key)
   switch children {
-  | Some(arr) => arr
-      ->Belt.Array.keepMap(getKeyValueFromMap)
-      ->Belt.Array.map(((k, v)) => getChildWithParent(k) * v + v)
-      ->Belt.Array.reduce(0, (acc, cur) => acc + cur) // 0: 항등원
+  | Some(arr) =>
+    arr
+    ->Belt.Array.keepMap(getKeyValueFromMap)
+    ->Belt.Array.map(((k, v)) => getChildWithParent(k) * v + v)
+    ->Belt.Array.reduce(0, (acc, cur) => acc + cur) // 0: 항등원
   | _ => 0 // no child
   }
 }
 
- "shiny gold"->getChildWithParent->Js.log
+"shiny gold"->getChildWithParent->Js.log
