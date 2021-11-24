@@ -23,7 +23,6 @@ let makeValueMap = arr => {
 }
 
 let makeMap = (key, values) => {
-  // Map<string, Map<string, int>>
   let key = key->Js.String2.replaceByRe(%re("/\s(bags|bag)[\.]*/g"), "")
   let valueMap =
     values
@@ -37,7 +36,6 @@ let makeMap = (key, values) => {
       | _ => None
       }
     })
-  // Belt.Map.String.set(Belt.Map.String.empty, key, valueMap)
   (key, valueMap)
 }
 
@@ -56,8 +54,7 @@ let maps = arr->Belt.Array.keepMap(s => {
   }
 })
 
-let getKeyFromMap = m => m -> Belt.Map.String.keysToArray->Belt.Array.getExn(0)
-
+let getKeyFromMap = m => m->Belt.Map.String.keysToArray->Belt.Array.getExn(0)
 
 let getKeyValueFromMap = m => {
   let toArr = m->Belt.Map.String.toArray
@@ -68,7 +65,6 @@ let getKeyValueFromMap = m => {
 }
 
 let totalMap = Belt.Map.String.mergeMany(Belt.Map.String.empty, maps)
-// Map.String.t<string, Array<Map.String.t<string,int>>>
 
 // Q1
 let totalArr = totalMap->Belt.Map.String.toArray
@@ -88,22 +84,16 @@ let rec getParents = s => {
 
 getParents("shiny gold")->Belt.Set.String.size->Js.log
 
-
 // Q2
-let rec getChild = key => {
+let rec getChildWithParent = key => {
   let children = totalMap->Belt.Map.String.get(key)
   switch children {
-  | Some(arr) =>
-    if arr->Belt.Array.length !== 0 {
-      arr
+  | Some(arr) => arr
       ->Belt.Array.keepMap(getKeyValueFromMap)
-      ->Belt.Array.map(((k, v)) => getChild(k) * v)
+      ->Belt.Array.map(((k, v)) => getChildWithParent(k) * v + v)
       ->Belt.Array.reduce(0, (acc, cur) => acc + cur) // 0: 항등원
-    } else {
-      1
-    } // 항등원
-  | _ => 1 // 항등원
+  | _ => 0 // no child
   }
 }
 
-// getChild("shiny gold")->Js.log
+ "shiny gold"->getChildWithParent->Js.log
