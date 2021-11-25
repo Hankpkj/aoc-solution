@@ -26,7 +26,7 @@ let do = s => {
   }
 }
 
-let whileFtn = while (
+let whileFtn = () => while (
   currentIdx.contents < length && !(set.contents->Belt.Set.Int.has(currentIdx.contents))
 ) {
   set := set.contents->Belt.Set.Int.add(currentIdx.contents)
@@ -34,7 +34,8 @@ let whileFtn = while (
 }
 
 // example 1
-whileFtn
+
+whileFtn()
 val.contents->Js.log
 
 //example 2
@@ -52,10 +53,7 @@ jumpIdx
   currentIdx := 0
   set := Belt.Set.Int.empty
   toChange := toChangeIdx
-  while currentIdx.contents < length && !(set.contents->Belt.Set.Int.has(currentIdx.contents)) {
-    set := set.contents->Belt.Set.Int.add(currentIdx.contents)
-    arr->Belt.Array.getExn(currentIdx.contents)->do
-  }
+  whileFtn()
   currentIdx.contents === length ? Some(val.contents) : None
 })
 ->Belt.List.headExn
