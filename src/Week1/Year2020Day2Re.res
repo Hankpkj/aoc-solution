@@ -1,8 +1,9 @@
-let input = Node.Fs.readFileAsUtf8Sync("input/Week1/Year2020Day2.sample.txt")
+open Input
+let input = Input.get(Input.single, 2)
 
 open Belt
 
-let li = input->Js.String2.split("\n")->List.fromArray
+let li = input->List.fromArray
 
 type policy = {
   low: int,
