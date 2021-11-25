@@ -19,32 +19,34 @@ let judge = s => s->Set.String.intersect(require)->Set.String.size === 7
 input->List.fromArray->List.map(parsing)->List.keep(judge)->List.size->Js.log
 
 // ---- example 2 ---- //
+let toSingleLine = s => s->Js.String2.replaceByRe(%re("/[\s]+/g"), " ")
+
 type passport = {
-  byr: int,
-  iyr: int,
-  eyr: int,
-  hgt: int,
+  byr: string,
+  iyr: string,
+  eyr: string,
+  hgt: string,
   hcl: string,
   ecl: string,
   pid: string,
-  cid: option<string>,
+  cid: string, // TODO: change meanless string into None
 }
 
-let toSingleLine = s => s->Js.String2.replaceByRe(%re("/[\s]+/g"), " ")
+let sequence = listOfOptionable =>
+  listOfOptionable->List.reduce(Some(list{}), (acc, optionable) =>
+    switch (acc, optionable) {
+    | (Some(acc), Some(isSomeValue)) => Some(list{isSomeValue, ...acc})
+    | _ => None
+    }
+  )
 
-let intCheck = (target, min, max) => min <= target && target <= max ? Some(target) : None
+let intCheck = (target, min, max) => {
+  let targetToInt = target->Int.fromString->Option.getExn
+  min <= targetToInt && targetToInt <= max ? Some(targetToInt->Int.toString) : None
+}
 
-let extractIntAndCheck = (arr, min, max) =>
-  switch arr {
-  | [_, value] => value->Int.fromString->Option.mapWithDefault(0, id)->intCheck(min, max)
-  | _ => None
-  }
-
-let extractStr = arr =>
-  switch arr {
-  | [_, value] => Some(value)
-  | _ => None
-  }
+let extractIntAndCheck = (arr, min, max) => arr->Array.getExn(1)->intCheck(min, max)
+let extractStr = arr => arr->Array.get(1)
 
 let byrRe = %re("/byr:(.*?){4}(?:\s|$)/")
 let iyrRe = %re("/iyr:(.*?){4}(?:\s|$)/")
@@ -70,8 +72,8 @@ type parsedHgt =
 
 let checkHgt = h => {
   switch h {
-  | Cm(height) => intCheck(height, 150, 192)
-  | In(height) => intCheck(height, 59, 76)
+  | Cm(height) => height->Int.toString->intCheck(150, 193) //
+  | In(height) => height->Int.toString->intCheck(59, 76)
   | Bad => None
   }
 }
@@ -91,8 +93,8 @@ let parseHgt = s => {
   | Some(arr) => {
       let hgt = arr->extractHgt
       switch hgt {
-      | Cm(i) => Some(i)
-      | In(i) => Some(i)
+      | Cm(i) => Some(i->Int.toString ++ "cm")
+      | In(i) => Some(i->Int.toString ++ "in")
       | Bad => None
       }
     }
@@ -107,82 +109,42 @@ let parseStr = (s, re) => {
   | _ => None
   }
 }
+let apply = s => {
+  list{
+    Some(s->parseStr(cidRe)->Option.mapWithDefault("no cid", id)), // TODO: change meanless string into None
+    s->parseStr(pidRe),
+    s->parseStr(eclRe),
+    s->parseStr(hclRe),
+    s->parseHgt,
+    s->parseYear(eyrRe, 2020, 2030),
+    s->parseYear(iyrRe, 2010, 2020),
+    s->parseYear(byrRe, 1920, 2002),
+  }
+}
 
-
-
-// process 1
-input
-->Array.map(toSingleLine)
-->Array.keepMap(str => {
-  str
-  ->parseYear(byrRe, 1920, 2002)
-  ->Option.flatMap(byr =>
-    str
-    ->parseYear(iyrRe, 2010, 2020)
-    ->Option.flatMap(iyr =>
-      str
-      ->parseYear(eyrRe, 2020, 2030)
-      ->Option.flatMap(eyr =>
-        str
-        ->parseHgt
-        ->Option.flatMap(hgt =>
-          str
-          ->parseStr(hclRe)
-          ->Option.flatMap(hcl =>
-            str
-            ->parseStr(eclRe)
-            ->Option.flatMap(ecl =>
-              str
-              ->parseStr(pidRe)
-              ->Option.map(pid => {
-                byr: byr,
-                iyr: iyr,
-                eyr: eyr,
-                hgt: hgt,
-                hcl: hcl,
-                ecl: ecl,
-                pid: pid,
-                cid: str->parseStr(cidRe),
-              })
-            )
-          )
-        )
-      )
-    )
-  )
-})
-->Array.length
-->Js.log
-
-// process 2
-
-let parseFnList = t => (
-  t->parseYear(byrRe, 1920, 2002),
-  t->parseYear(iyrRe, 2010, 2020),
-  t->parseYear(eyrRe, 2020, 2030),
-  t->parseHgt,
-  t->parseStr(hclRe),
-  t->parseStr(eclRe),
-  t->parseStr(pidRe),
-  t->parseStr(cidRe),
-)
-
-let make = (byr, iyr, eyr, hgt, hcl, ecl, pid, cid) => Some({
-  byr: byr,
-  iyr: iyr,
-  eyr: eyr,
-  hgt: hgt,
-  hcl: hcl,
-  ecl: ecl,
-  pid: pid,
-  cid: cid,
-})
-
-let parse = s =>
-  switch parseFnList(s) {
-  | (Some(byr), Some(iyr), Some(eyr), Some(hgt), Some(hcl), Some(ecl), Some(pid), cid) =>
-    make(byr, iyr, eyr, hgt, hcl, ecl, pid, cid)
+let listToPassport = li => {
+  switch li {
+  | list{byr, iyr, eyr, hgt, hcl, ecl, pid, cid} =>
+    Some({
+      byr: byr,
+      iyr: iyr,
+      eyr: eyr,
+      hgt: hgt,
+      hcl: hcl,
+      ecl: ecl,
+      pid: pid,
+      cid: cid,
+    })
   | _ => None
   }
+}
 
-input->Array.map(toSingleLine)->Array.keepMap(parse)->Array.length->Js.log
+input
+->Array.map(toSingleLine)
+->List.fromArray
+->List.map(apply) // list of list
+->List.keepMap(sequence)
+->List.toArray
+->Array.keepMap(listToPassport)
+// ->Array.length
+->Js.log
