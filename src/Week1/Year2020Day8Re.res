@@ -1,6 +1,6 @@
 open Input
 let arr = Input.get(Input.Single, 8)
-
+let id = t => t
 open Belt
 type instruction =
   | Jmp(int)
@@ -12,6 +12,7 @@ type pendingData = {
   currentValue: int,
   idxLog: Set.Int.t,
   instr: instruction,
+
 }
 
 type resultData = Result(int, int) // idx, val
@@ -21,7 +22,7 @@ type resultDataType =
   | Fail(int, int)
 
 type endTrigger =
-  | Block(int, int)
+  | Block(int, int, int, Set.Int.t) 
   | Finish(int, int)
 
 let toInstruction = s =>
@@ -57,13 +58,13 @@ let makePendingData = (ci, cv, l, instr) => {
 
 let length = instrArr->Array.length
 
-let rec do = (log, currentIdx, currentValue) => {
+let rec do = (log, currentIdx, currentValue, noBlockIdx) => {
   if currentIdx < length {
-    let instr = instrArr->Array.getExn(currentIdx)
+    let instr = currentIdx === noBlockIdx ? Nop :  instrArr->Array.getExn(currentIdx)
     let pd = makePendingData(currentIdx, currentValue, log, instr)
     switch pd->action {
-    | Success(ni, nv) => do(log->Set.Int.add(currentIdx), ni, nv)
-    | Fail(ci, cv) => Block(ci, cv)
+    | Success(ni, nv) => do(log->Set.Int.add(currentIdx), ni, nv, noBlockIdx)
+    | Fail(ci, cv) => Block(ci, cv, noBlockIdx, log)
     }
   } else {
     Finish(currentIdx, currentValue)
@@ -71,11 +72,33 @@ let rec do = (log, currentIdx, currentValue) => {
 }
 
 // example 1
-let exampleOneResult = Set.Int.empty->do(0, 0)
+let exampleOneResult = Set.Int.empty->do(0, 0, length)
 switch exampleOneResult {
 | Finish(_, _) => Js.log("Finish!")
-| Block(_, v) => v->Js.log
+| Block(_, v, _, _) => v->Js.log
 }
 
 // example 2
-// let rec findGoldSpot = (i) => {}
+
+// method 1 : sequential search
+let jumpIdx =
+  arr
+  ->Belt.Array.mapWithIndex((idx, s) => Js.Re.test_(%re("/^jmp/"), s) ? Some(idx) : None)
+  ->Belt.Array.keepMap(id)
+  ->Belt.List.fromArray
+
+let keepFinish = (t) => switch t {
+| Finish(_, v) => Some(v)
+| Block(_) => None
+}
+
+jumpIdx -> List.keepMap(idx => Set.Int.empty -> do(0, 0, idx) -> keepFinish) -> List.headExn -> Js.log
+
+// method 2 : target search
+// let rec findGoldSpot = (set, ci, cv, noBlockIdx) => {
+//     let re = set -> do(ci, cv, noBlockIdx)
+//     switch re {
+//     | Finish(i, v) => Finish(i, v)
+//     | Block(i, v, b, s) => s -> findGoldSpot(i, v, b)  
+//     }
+// }
