@@ -1,8 +1,7 @@
 module Input = {
   open Belt
   type outputType = Single | Double
-  let single = Single
-  let double = Double
+
   let get = (t, fileNum) =>
     switch t {
     | Single =>

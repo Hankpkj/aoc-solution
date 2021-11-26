@@ -1,5 +1,5 @@
 open Input
-let input = Input.get(Input.single, 3)
+let input = Input.get(Input.Single, 3)
 open Belt
 let li = input->List.fromArray
 let id = t => t

@@ -1,5 +1,5 @@
 open Input
-let input = Input.get(Input.single, 2)
+let input = Input.get(Input.Single, 2)
 
 open Belt
 
@@ -17,13 +17,11 @@ let split = string => string->Js.String2.splitByRe(%re("/-|\s|:\s/g"))->Array.ke
 
 let intStringToInt = s => s->Int.fromString->Option.getExn
 
-let parsing = fullString => {
-  let splitted = fullString->split // :: Array<not empty string>
-  switch splitted {
+let parsing = fullString =>
+  switch fullString->split {
   | [a, b, c, d] => Some({low: a->intStringToInt, high: b->intStringToInt, target: c, source: d})
   | _ => None
   }
-}
 
 let judgeX = p => {
   let {low, high, target, source} = p

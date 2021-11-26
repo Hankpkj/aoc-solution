@@ -1,5 +1,5 @@
 open Input
-let input = Input.get(Input.double, 4)
+let input = Input.get(Input.Double, 4)
 
 open Belt
 let require = ["byr", "hcl", "pid", "ecl", "iyr", "hgt", "eyr"]->Set.String.fromArray
@@ -32,6 +32,8 @@ type passport = {
   cid: string, // TODO: change meanless string into None
 }
 
+// string -> List<Js.Dict.t> -> List<option<passport>> -> int
+
 let sequence = listOfOptionable =>
   listOfOptionable->List.reduce(Some(list{}), (acc, optionable) =>
     switch (acc, optionable) {
@@ -57,50 +59,43 @@ let eclRe = %re("/ecl:(amb|blu|brn|gry|grn|hzl|oth)(?:\s|$)/")
 let pidRe = %re("/pid:([0-9]{9})/")
 let cidRe = %re("/cid:(.*?)(?:\s|$)/")
 
-let parseYear = (s, re, minY, maxY) => {
-  let matched = s->Js.String2.match_(re)
-  switch matched {
-  | Some(arr) => arr->extractIntAndCheck(minY, maxY)
-  | _ => None
-  }
-}
+let parseYear = (s, re, minY, maxY) =>
+  s->Js.String2.match_(re)->Option.flatMap(a => a->extractIntAndCheck(minY, maxY))
 
 type parsedHgt =
   | Cm(int)
   | In(int)
-  | Bad
 
 let checkHgt = h => {
-  switch h {
-  | Cm(height) => height->Int.toString->intCheck(150, 193) //
-  | In(height) => height->Int.toString->intCheck(59, 76)
-  | Bad => None
-  }
+  h->Belt.Option.map(t => 
+    switch t {
+    | Cm(height) => height->Int.toString->intCheck(150, 193) //
+    | In(height) => height->Int.toString->intCheck(59, 76)
+    }
+  )
 }
 
 let extractHgt = arr =>
   switch arr {
   | [_, height, sign] => {
       let toInt = height->Int.fromString->Option.mapWithDefault(0, id)
-      sign === "cm" ? Cm(toInt) : In(toInt)
-    }
-  | _ => Bad
-  }
-
-let parseHgt = s => {
-  let matched = s->Js.String2.match_(hgtRe)
-  switch matched {
-  | Some(arr) => {
-      let hgt = arr->extractHgt
-      switch hgt {
-      | Cm(i) => Some(i->Int.toString ++ "cm")
-      | In(i) => Some(i->Int.toString ++ "in")
-      | Bad => None
-      }
+      Some(sign === "cm" ? Cm(toInt) : In(toInt))
     }
   | _ => None
   }
-}
+
+let parseHgt = s =>
+  s
+  ->Js.String2.match_(hgtRe)
+  ->Belt.Option.map(extractHgt)
+  ->Belt.Option.flatMap(arr => {
+    arr->Belt.Option.map(hgt =>
+      switch hgt {
+      | Cm(i) => i->Int.toString ++ "cm"
+      | In(i) => i->Int.toString ++ "in"
+      }
+    )
+  })
 
 let parseStr = (s, re) => {
   let matched = s->Js.String2.match_(re)
@@ -146,5 +141,7 @@ input
 ->List.keepMap(sequence)
 ->List.toArray
 ->Array.keepMap(listToPassport)
-// ->Array.length
+->Array.length
 ->Js.log
+
+
