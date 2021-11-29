@@ -143,5 +143,3 @@ input
 ->Array.keepMap(listToPassport)
 ->Array.length
 ->Js.log
-
-

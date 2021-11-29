@@ -3,33 +3,34 @@ let li = Input.get(Input.Single, 5)->Belt.List.fromArray
 
 open Belt
 
-type range = Range(int, int, int)
-
-let findRange = (r: range, signLeft) => {
-  let Range(start, mid, end) = r
-  signLeft 
-  ? Range(start, (start + mid) / 2, mid) 
-  : Range(mid + 1, (mid + 1 + end) / 2, end)
+type range = {
+  start: int,
+  mid: int,
+  end: int,
 }
 
-let initRowRange = Range(0, 63, 127)
-let initColRange = Range(0, 3, 7)
+let range = (start, mid, end) => { start, mid, end }
+
+let findRange = ({ start, mid, end }: range, signLeft) => {
+  signLeft 
+  ? range(start, (start + mid) / 2, mid)
+  : range(mid + 1, (mid + 1 + end) / 2, end)
+}
+
+let initRowRange = range(0, 63, 127)
+let initColRange = range(0, 3, 7)
 
 // FBFFBFFLLR
 // 1011011110 TODO: try binary shift
 
 let findMid = (r, ir, c): range => List.reduce(r, ir, (acc, cur) => findRange(acc, cur === c))
-let rangeMid = r => {
-  let Range(_, x, _) = r
-  x
-}
 let ids =
   li
   ->List.map(str => {
     let splitted = str->Js.String2.split("")->Belt.List.fromArray->Belt.List.splitAt(7)
     splitted->Option.mapWithDefault(0, ((fb, lr)) => {
-      let row = findMid(fb, initRowRange, "F")->rangeMid
-      let col = findMid(lr, initColRange, "L")->rangeMid
+      let row = findMid(fb, initRowRange, "F").mid
+      let col = findMid(lr, initColRange, "L").mid
       row * 8 + col
     })
   })

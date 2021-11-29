@@ -72,8 +72,6 @@ let rec getParents = s => {
 
 getParents("shiny gold")->Belt.Set.String.size->Js.log
 
-// Q2
-
 let getKeyValueFromMap = m => {
   let toArr = m->Belt.Map.String.toArray
   switch toArr {
