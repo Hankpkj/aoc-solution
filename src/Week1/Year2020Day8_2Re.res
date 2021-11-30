@@ -3,83 +3,71 @@ let arr = Input.get(Input.Single, 8)
 
 open Belt
 
+type running = Terminate | Loop
+
 type instruction =
   | Jmp(int)
   | Acc(int)
-  | Nop
-
-type pair = {
-  index: int,
-  value: int,
-}
-let pair = (i, v) => {index: i, value: v}
-
-type pendingData = {
-  instruction: instruction,
-  current: pair,
-  prev: pair,
-  setFromPrev: Set.Int.t,
-  prevJmp: pair,
-}
-let pendingData = (i, cPair, nPair, set, prevJmp) => {
-  instruction: i,
-  current: cPair,
-  prev: nPair,
-  setFromPrev: set,
-  prevJmp: prevJmp,
-}
-
-type excuteType =
-  | Success(pendingData)
-  | Fail(pair)
-
-type endType =
-  | Pass(pair) // value
-  | NonPass(pair)
+  | Nop(int)
 
 let makeInstruction = s =>
   switch s->Js.String2.split(" ") {
   | ["jmp", v] => v->Int.fromString->Option.map(t => Jmp(t))
   | ["acc", v] => v->Int.fromString->Option.map(t => Acc(t))
-  | ["nop", _] => Some(Nop)
+  | ["nop", v] => v->Int.fromString->Option.map(t => Nop(t))
   | _ => None
   }
 
-let instructions = arr->Array.keepMap(makeInstruction)
-let length = instructions->Array.length
+let instructions = arr->Array.keepMap(makeInstruction)->List.fromArray
 
-let add = set => set->Set.Int.add
-let addSetFromPending = p => {...p, setFromPrev: p.setFromPrev->add(p.current.index)}
-let judge = p => p.setFromPrev->Set.Int.has(p.current.index) ? Fail(p.prevJmp) : Success(p->addSetFromPending)
+type record = {value: int, logs: list<int>, passed: running}
+let record = (v, l, p) => {value: v, logs: l, passed: p}
 
-let jump = (p, v) => pendingData(p.instruction, pair(p.current.index + v, p.current.value), p.current, p.setFromPrev, p.current)
-let acc = (p, v) => pendingData(p.instruction, pair(p.current.index + 1, p.current.value + v), p.current, p.setFromPrev, p.prevJmp)
-let nop = p => {...p, current: pair(p.current.index + 1, p.current.value)}
+let emptyRecord = {value: 0, logs: list{}, passed: Loop}
 
-let nextPendingData = p => 
-  switch p.instruction {
-  | Jmp(v) => p -> jump(v)
-  | Acc(v) => p -> acc(v) 
-  | Nop => p -> nop 
+let equal = (a, b) => a === b
+
+let addToSet = li => li->List.add
+
+let rec do = (instructions, currentIdx, record) => {
+  if List.length(instructions) === currentIdx {
+    {...record, passed: Terminate}
+  } else if record.logs->List.has(currentIdx, equal) {
+    {...record, passed: Loop}
+  } else {
+    let nextRecord = {...record, logs: record.logs->addToSet(currentIdx)}
+    switch instructions->List.getExn(currentIdx) {
+    | Nop(_) => instructions->do(currentIdx + 1, nextRecord)
+    | Acc(i) => instructions->do(currentIdx + 1, {...nextRecord, value: nextRecord.value + i})
+    | Jmp(i) => instructions->do(currentIdx + i, nextRecord)
+    }
+  }
 }
 
-let rec do = p =>
-  p.current.index < length
-    ? {
-        p -> Js.log
-        let cInstr = p.current.index === p.prevJmp.index ? Nop : instructions->Array.getExn(p.current.index)
-        switch nextPendingData({...p, instruction: cInstr})->judge {
-        | Success(pd) => pd -> do
-        // | Fail(pair) => do({...p, current: pair})
-        | Fail(pair) => NonPass(pair)
-        }
-      }
-    : Pass(p.current)
 
-let initPair = {index: 0, value: 0}
-let initSet = Set.Int.empty
-let initInstr = instructions->Array.getExn(0)
+let id = t => t
+let initRecord = instructions->do(0, emptyRecord)
+let startIdx = initRecord.logs->List.get(initRecord.logs -> List.size - 1) -> Option.getWithDefault(0)
 
-let initPendingData = pendingData(initInstr, initPair, initPair, initSet, pair(-1, 0))
+let change = (list, index, value) => list->List.mapWithIndex((idx, v) => idx === index ? value : v)
 
-initPendingData -> do -> Js.log
+let modify = i =>
+  switch instructions->List.getExn(i) {
+  | Nop(v) => Jmp(v)
+  | Jmp(v) => Nop(v)
+  | _ => instructions->List.getExn(i)
+  }
+
+let rec find = idx => { 
+  let instruction = idx->modify
+  switch instruction {
+  | Acc(_) => find(idx + 1)
+  | Jmp(_) | Nop(_) =>
+    instructions->change(idx, instruction)->do(0, emptyRecord)->(t => switch t.passed {
+    | Terminate => t
+    | Loop => find(idx+1)
+    })
+  }
+}
+
+find(startIdx)->Js.log

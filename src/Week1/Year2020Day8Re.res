@@ -74,7 +74,7 @@ let rec do = (log, currentIdx, currentValue) => {
 let exampleOneResult = Set.Int.empty->do(0, 0)
 switch exampleOneResult {
 | Finish(_, _) => Js.log("Finish!")
-| Block(_, v) => v->Js.log
+| Block(t, v) => t->Js.log
 }
 
 // example 2
