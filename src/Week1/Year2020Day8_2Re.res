@@ -20,24 +20,58 @@ let makeInstruction = s =>
 
 let instructions = arr->Array.keepMap(makeInstruction)->List.fromArray
 
-type record = {value: int, logs: list<int>, passed: running}
-let record = (v, l, p) => {value: v, logs: l, passed: p}
+type pair = {index: int, value: int}
+let pair = (i, v) => {index: i, value:v}
 
-let emptyRecord = {value: 0, logs: list{}, passed: Loop}
+type nonEmptyList<'a> = {
+  head: 'a,
+  tail: List.t<'a>,
+}
 
-let equal = (a, b) => a === b
+let cons = (list: nonEmptyList<'a>, head) => {
+  { head, tail: list{ list.head, ...list.tail} }
+} 
 
-let addToSet = li => li->List.add
+type record = {logs: nonEmptyList<pair>, passed: running}
+let record = (l, p) => {logs: l, passed: p}
 
-let rec do = (instructions, currentIdx, record) => {
-  if List.length(instructions) === currentIdx {
+let emptyRecord = {logs: {head: pair(0, 0), tail: list{}}, passed: Loop}
+
+let eq = (pr, i) => pr.index === i
+
+let has = (nonEmptyList, idx) => {
+  nonEmptyList.head.index === idx ||
+  nonEmptyList.tail -> List.has(idx, eq)
+}
+
+let shift = (nonEmptyList, idx, value) => {
+  let {head, tail} = nonEmptyList
+  {
+    head: pair(idx, value),
+    tail: list{head, ...tail}
+  }
+}
+
+let unshift = (nonEmptyList) => {
+  let {head, tail} = nonEmptyList
+  switch tail {
+  | list{ h, ...t } => Some({ head: h, tail: t })
+  | list{ h } => None
+  }
+}
+
+// TODO: params -> (instruction, logs) ;; remove or modify record to logs
+let rec do = (instructions, logs) => {
+  let {logs, passed} = record
+  let {head, tail} = logs
+  if List.length(instructions) === head.index {
     {...record, passed: Terminate}
-  } else if record.logs->List.has(currentIdx, equal) {
+  } else if record.logs-> has(head.index) {
     {...record, passed: Loop}
   } else {
-    let nextRecord = {...record, logs: record.logs->addToSet(currentIdx)}
+    let nextRecord = {...record, logs: record.logs -> shift(currentIdx, value)}
     switch instructions->List.getExn(currentIdx) {
-    | Nop(_) => instructions->do(currentIdx + 1, nextRecord)
+    | Nop(_) => instructions->do(currentIdx + 1, {...record, logs: list{pair(currentIdx+1, )}})
     | Acc(i) => instructions->do(currentIdx + 1, {...nextRecord, value: nextRecord.value + i})
     | Jmp(i) => instructions->do(currentIdx + i, nextRecord)
     }
@@ -69,5 +103,5 @@ let rec find = idx => {
     })
   }
 }
-
+// 
 find(startIdx)->Js.log

@@ -539,7 +539,7 @@ acc +0
 jmp -167
 acc -9
 acc +42
-acc +20
+ +2acc0
 jmp -63
 jmp -107
 acc -6
