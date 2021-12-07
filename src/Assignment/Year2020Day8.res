@@ -1,60 +1,95 @@
-let input = Node.Fs.readFileAsUtf8Sync("input/Week1/Year2020Day8.sample.txt")
-let arr = input->Js.String2.split("\n")
+open Input
+let arr = Input.get(Input.Single, 8)
+let id = t => t
+open Belt
+type instruction =
+  | Jmp(int)
+  | Acc(int)
+  | Nop
 
-let length = arr->Belt.Array.length
-let val = ref(0)
-let currentIdx = ref(0)
-let set = ref(Belt.Set.Int.empty)
-let toChange = ref(0)
+type pendingData = {
+  currentIdx: int,
+  currentValue: int,
+  idxLog: Set.Int.t,
+  instr: instruction,
 
-let jump = i =>
-  currentIdx.contents === toChange.contents
-    ? currentIdx := currentIdx.contents + 1
-    : currentIdx := currentIdx.contents + i
-let acc = i => {
-  currentIdx := currentIdx.contents + 1
-  val := val.contents + i
 }
 
-let do = s => {
-  let splited = s->Js.String2.splitAtMost(" ", ~limit=2)
-  switch splited {
-  | ["jmp", v] => jump(v->Belt.Int.fromString->Belt.Option.getExn)
-  | ["acc", v] => acc(v->Belt.Int.fromString->Belt.Option.getExn)
-  | ["nop", _] => currentIdx := currentIdx.contents + 1
-  | _ => ()
+type resultData = Result(int, int) // idx, val
+
+type resultDataType =
+  | Success(int, int) //
+  | Fail(int, int)
+
+type endTrigger =
+  | Block(int, int, int, Set.Int.t) 
+  | Finish(int, int)
+
+let toInstruction = s =>
+  switch s->Js.String2.splitAtMost(" ", ~limit=2) {
+  | ["jmp", v] => Some(Jmp(v->Int.fromString->Option.getExn))
+  | ["acc", v] => Some(Acc(v->Int.fromString->Option.getExn))
+  | ["nop", _] => Some(Nop)
+  | _ => None
+  }
+
+let judge = (res, log, ci, cv) => {
+  let Result(ni, nv) = res
+  log->Set.Int.has(ni) ? Fail(ci, cv) : Success(ni, nv)
+}
+
+let action = p => {
+  let {currentIdx, currentValue, idxLog, instr} = p
+  switch instr {
+  | Jmp(addIdx) => Result(currentIdx + addIdx, currentValue)
+  | Acc(addVal) => Result(currentIdx + 1, currentValue + addVal)
+  | Nop => Result(currentIdx + 1, currentValue)
+  }->judge(idxLog, currentIdx, currentValue)
+}
+
+let instrArr = arr->Array.keepMap(toInstruction)
+
+let makePendingData = (ci, cv, l, instr) => {
+  currentIdx: ci,
+  currentValue: cv,
+  idxLog: l,
+  instr: instr,
+}
+
+let length = instrArr->Array.length
+
+let rec do = (log, currentIdx, currentValue, noBlockIdx) => {
+  if currentIdx < length {
+    let instr = currentIdx === noBlockIdx ? Nop :  instrArr->Array.getExn(currentIdx)
+    let pd = makePendingData(currentIdx, currentValue, log, instr)
+    switch pd->action {
+    | Success(ni, nv) => do(log->Set.Int.add(currentIdx), ni, nv, noBlockIdx)
+    | Fail(ci, cv) => Block(ci, cv, noBlockIdx, log)
+    }
+  } else {
+    Finish(currentIdx, currentValue)
   }
 }
 
-let whileFtn = () => while (
-  currentIdx.contents < length && !(set.contents->Belt.Set.Int.has(currentIdx.contents))
-) {
-  set := set.contents->Belt.Set.Int.add(currentIdx.contents)
-  arr->Belt.Array.getExn(currentIdx.contents)->do
+// example 1
+let exampleOneResult = Set.Int.empty->do(0, 0, length)
+switch exampleOneResult {
+| Finish(_, _) => Js.log("Finish!")
+| Block(_, v, _, _) => v->Js.log
 }
 
-// example 1
+// example 2
 
-whileFtn()
-val.contents->Js.log
-
-//example 2
-let id = t => t
-
+// method 1 : sequential search
 let jumpIdx =
   arr
   ->Belt.Array.mapWithIndex((idx, s) => Js.Re.test_(%re("/^jmp/"), s) ? Some(idx) : None)
   ->Belt.Array.keepMap(id)
   ->Belt.List.fromArray
 
-jumpIdx
-->Belt.List.keepMap(toChangeIdx => {
-  val := 0
-  currentIdx := 0
-  set := Belt.Set.Int.empty
-  toChange := toChangeIdx
-  whileFtn()
-  currentIdx.contents === length ? Some(val.contents) : None
-})
-->Belt.List.headExn
-->Js.log
+let keepFinish = (t) => switch t {
+| Finish(_, v) => Some(v)
+| Block(_) => None
+}
+
+jumpIdx -> List.keepMap(idx => Set.Int.empty -> do(0, 0, idx) -> keepFinish) -> List.headExn -> Js.log
