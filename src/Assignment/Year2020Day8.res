@@ -1,5 +1,5 @@
 open Input
-let arr = Input.get(Input.Single, 8)
+let arr = Input.getInput(Input.Single, 8)
 let id = t => t
 open Belt
 type instruction =

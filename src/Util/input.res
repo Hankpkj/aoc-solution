@@ -1,16 +1,15 @@
 module Input = {
   open Belt
-  type outputType = Single | Double
+  type t = Single | Double
 
-  let get = (t, fileNum) =>
-    switch t {
-    | Single =>
-      Node.Fs.readFileAsUtf8Sync(`input/Year2020Day${fileNum -> Int.toString}.sample.txt`)->Js.String2.split(
-        "\n",
-      )
-    | Double =>
-      Node.Fs.readFileAsUtf8Sync(`input/Year2020Day${fileNum -> Int.toString}.sample.txt`)->Js.String2.split(
-        "\n\n",
-      )
+  let getInput = (t, fileNum) => {
+    let newLineString = "\n"
+    let splitStr = switch t {
+    | Single => newLineString
+    | Double => newLineString->Js.String2.repeat(2)
     }
+    Node.Fs.readFileAsUtf8Sync(
+      `input/Year2020Day${fileNum->Int.toString}.sample.txt`,
+    )->Js.String2.split(splitStr)
+  }
 }

@@ -1,6 +1,6 @@
 // --- Given Input --- //
 open Input
-let input = Input.get(Input.Double, 6)
+let input = Input.getInput(Input.Double, 6)
 
 // --- Generanl Utils --- //
 let sum = (a, b) => a + b

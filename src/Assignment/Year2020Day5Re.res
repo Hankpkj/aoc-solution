@@ -1,5 +1,5 @@
 open Input
-let li = Input.get(Input.Single, 5)->Belt.List.fromArray
+let li = Input.getInput(Input.Single, 5)->Belt.List.fromArray
 
 open Belt
 

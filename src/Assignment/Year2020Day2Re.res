@@ -1,5 +1,5 @@
 open Input
-let input = Input.get(Input.Single, 2)
+let input = Input.getInput(Input.Single, 2)
 
 open Belt
 

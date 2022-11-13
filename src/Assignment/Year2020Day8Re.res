@@ -1,5 +1,5 @@
 open Input
-let arr = Input.get(Input.Single, 8)
+let arr = Input.getInput(Input.Single, 8)
 
 open Belt
 type instruction =
@@ -74,7 +74,7 @@ let rec do = (log, currentIdx, currentValue) => {
 let exampleOneResult = Set.Int.empty->do(0, 0)
 switch exampleOneResult {
 | Finish(_, _) => Js.log("Finish!")
-| Block(t, v) => t->Js.log
+| Block(t, _) => t->Js.log
 }
 
 // example 2
